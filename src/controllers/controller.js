@@ -41,10 +41,29 @@ export async function createChoice(req, res) {
         }
 
         // status 403
+        if (dayjs(existingPoll.expireAt).isBefore(dayjs())) {
+            return res.sendStatus(403)
+        }
 
         await db.collection("choice").insertOne({ title, pollId })
         res.sendStatus(201)
     } catch (err) {
         res.status(500).sednd(err.message)
+    }
+}
+
+export async function getChoice(req, res) {
+    const { id } = req.params
+
+    try {
+        const polls = await db.collection("poll").findOne({ _id: new ObjectId(id) })
+        if (!polls) {
+            return res.sendStatus(404)
+        }
+
+        const voteOption = await db.collection("choice").find({ pollId: id }).toArray()
+        res.send(voteOption)
+    } catch (err) {
+        res.status(500).send(err.message)
     }
 }

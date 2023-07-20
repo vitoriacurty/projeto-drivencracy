@@ -1,4 +1,5 @@
 import dayjs from "dayjs"
+import { ObjectId } from "mongodb"
 import { db } from "../database/db.connection.js"
 
 export async function createPoll(req, res) {
@@ -22,5 +23,28 @@ export async function getPoll(req, res) {
         res.send(polls)
     } catch (err) {
         res.status(500).send(err.message)
+    }
+}
+
+export async function createChoice(req, res) {
+    const { title, pollId } = req.body
+
+    try {
+        const existingPoll = await db.collection("poll").findOne({ _id: new ObjectId(pollId) })
+        if (!existingPoll) {
+            return res.sendStatus(404)
+        }
+
+        const existingOption = await db.collection("choice").findOne({ title })
+        if (existingOption) {
+            return res.sendStatus(409)
+        }
+
+        // status 403
+
+        await db.collection("choice").insertOne({ title, pollId })
+        res.sendStatus(201)
+    } catch (err) {
+        res.status(500).sednd(err.message)
     }
 }

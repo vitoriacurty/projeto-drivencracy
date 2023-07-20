@@ -15,3 +15,12 @@ export async function createPoll(req, res) {
         res.status(500).send(err.message)
     }
 }
+
+export async function getPoll(req, res) {
+    try {
+        const polls = await db.collection("poll").find().toArray()
+        res.send(polls)
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+}

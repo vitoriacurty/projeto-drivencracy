@@ -97,25 +97,22 @@ export async function getResult(req, res) {
     const { id } = req.params
 
     try {
-        const pollId = new ObjectId(id)
-
-        const existingPoll = await db.collection("poll").findOne({ _id: pollId })
-        console.log("teste1", existingPoll)
+        const existingPoll = await db.collection("poll").findOne({ _id: new ObjectId(id) })
+        console.log("teste2", existingPoll)
 
         if (!existingPoll) {
             return res.sendStatus(404)
         }
 
-        const options = await db.collection("choice").find({ pollId }).toArray()
-        console.log("teste2", options)
+        const options = await db.collection("choice").find({ pollId: id }).toArray()
+        console.log("teste1", options)
 
         const results = await Promise.all(
             options.map(async (option) => {
-                const vote = await db.collection("vote").find({ choiceId: option._id }).toArray();
-                return { title: option.title, votes: vote.length };
+                const vote = await db.collection("vote").find({ choiceId: new ObjectId(option._id) }).toArray();
+                return { title: option.title, votes: vote.length }
             })
         )
-        console.log("teste3", results)
 
         results.sort((a, b) => b.votes - a.votes)
 

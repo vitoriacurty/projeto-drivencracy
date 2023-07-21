@@ -84,7 +84,7 @@ export async function createVote(req, res) {
 
         const registerVote = {
             createdAt: dayjs().format("YYYY-MM-DD HH:mm"),
-            choiceId: choice._id
+            choiceId: existingOption._id
         }
         await db.collection("vote").insertOne(registerVote)
         res.sendStatus(201)
@@ -92,4 +92,47 @@ export async function createVote(req, res) {
         res.status(500).send(err.message)
     }
 }
+
+export async function getResult(req, res) {
+    const { id } = req.params
+
+    try {
+        const pollId = new ObjectId(id)
+
+        const existingPoll = await db.collection("poll").findOne({ _id: pollId })
+        console.log("teste1", existingPoll)
+
+        if (!existingPoll) {
+            return res.sendStatus(404)
+        }
+
+        const options = await db.collection("choice").find({ pollId }).toArray()
+        console.log("teste2", options)
+
+        const results = await Promise.all(
+            options.map(async (option) => {
+                const vote = await db.collection("vote").find({ choiceId: option._id }).toArray();
+                return { title: option.title, votes: vote.length };
+            })
+        )
+        console.log("teste3", results)
+
+        results.sort((a, b) => b.votes - a.votes)
+
+        const obj = {
+            _id: existingPoll._id,
+            title: existingPoll.title,
+            expireAt: existingPoll.expireAt,
+            result: {
+                title: results[0].title,
+                votes: results[0].votes
+            }
+        }
+
+        return res.status(201).send(obj)
+    } catch (err) {
+        return res.status(500).send(err.message)
+    }
+}
+
 
